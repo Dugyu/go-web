@@ -1,5 +1,5 @@
 {
-  "name": "@aspect-build/go-web",
+  "name": "@lynx-js/go-web",
   "version": "0.1.0",
   "description": "Interactive Go component for Lynx documentation sites",
   "type": "module",

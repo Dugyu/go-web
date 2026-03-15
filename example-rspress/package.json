@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@lynx-example/hello-world": "0.6.7",
-    "@aspect-build/go-web": "file:..",
+    "@lynx-js/go-web": "file:..",
     "@rspress/core": "^2.0.3",
     "@douyinfe/semi-icons": "^2.74.0",
     "@douyinfe/semi-ui": "^2.75.0",

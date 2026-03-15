@@ -3,8 +3,8 @@ import {
   Go as GoBase,
   GoConfigProvider,
   type GoProps,
-} from '@aspect-build/go-web';
-import { rspressAdapter } from '@aspect-build/go-web/adapters/rspress';
+} from '@lynx-js/go-web';
+import { rspressAdapter } from '@lynx-js/go-web/adapters/rspress';
 
 // Exclude useI18n — rspress's i18n doesn't have go.* keys.
 // go-web falls back to its built-in English strings.

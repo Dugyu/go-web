@@ -5,7 +5,7 @@ Interactive Go component for Lynx documentation sites. Renders live Lynx example
 ## Usage
 
 ```tsx
-import { GoConfigProvider, Go } from '@aspect-build/go-web';
+import { GoConfigProvider, Go } from '@lynx-js/go-web';
 
 const config = {
   exampleBasePath: '/lynx-examples',
@@ -19,8 +19,8 @@ const config = {
 ### With rspress
 
 ```tsx
-import { GoConfigProvider, Go } from '@aspect-build/go-web';
-import { rspressAdapter } from '@aspect-build/go-web/adapters/rspress';
+import { GoConfigProvider, Go } from '@lynx-js/go-web';
+import { rspressAdapter } from '@lynx-js/go-web/adapters/rspress';
 
 const config = {
   exampleBasePath: '/lynx-examples',

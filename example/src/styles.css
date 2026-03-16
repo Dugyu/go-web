@@ -216,6 +216,39 @@ html[style*='color-scheme: dark'] .shiki span {
   color: #fff !important;
 }
 
+/* Example version tags                                                */
+/* ------------------------------------------------------------------ */
+.example-tag {
+  display: inline-block;
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 3px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.example-tag-version {
+  background: #3b82f620;
+  color: #3b82f6;
+}
+
+.example-tag-react {
+  background: #e879f920;
+  color: #c026d3;
+}
+
+.example-tag-web {
+  background: #10b98120;
+  color: #059669;
+}
+
+.example-tag-no-web {
+  background: #f9731620;
+  color: #ea580c;
+}
+
 /* ------------------------------------------------------------------ */
 /* JSX dialog                                                          */
 /* ------------------------------------------------------------------ */

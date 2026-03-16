@@ -28,7 +28,12 @@ import { SwitchSchema } from './switch-schema';
 import { PreviewImg } from './preview-img';
 import { ResizableContainer } from './resizable';
 
-import { IconGithub, IconCopyLink } from '../utils/icon';
+import {
+  IconGithub,
+  IconCopyLink,
+  IconFullscreen,
+  IconExitFullscreen,
+} from '../utils/icon';
 import { tabScrollToTop } from '../utils/tool';
 import { useTreeController } from '../hooks/use-tree-controller';
 import type { SchemaOptionsData } from '../hooks/use-switch-schema';
@@ -115,6 +120,7 @@ export const ExampleContent: FC<ExampleContentProps> = ({
   const { treeData, doChangeExpand, selectedKeys, expandedKeys, entryData } =
     useTreeController({ fileNames, value: currentFileName, entry });
   const [showPreview, setShowPreview] = useState(true);
+  const [showCode, setShowCode] = useState(true);
   const [showFileTree, setShowFileTree] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -157,9 +163,30 @@ export const ExampleContent: FC<ExampleContentProps> = ({
     };
   }, [previewImage, currentEntry, defaultWebPreviewFile]);
   const [tmpCurrentFileName, setTmpCurrentFileName] = useState('');
+  const [fullscreenMode, setFullscreenMode] = useState<'off' | 'all'>('off');
   const defaultI18n = (key: string) => DEFAULT_I18N[key] || key;
   const t = useI18nHook ? useI18nHook() : defaultI18n;
   const lang = useLangHook ? useLangHook() : 'en';
+
+  // Lock body scroll and handle Escape key in fullscreen
+  useEffect(() => {
+    if (fullscreenMode === 'off') return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setFullscreenMode('off');
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [fullscreenMode]);
 
   const getContainer = () => containerRef.current as HTMLDivElement;
   const onFileSelect = (v: string) => {
@@ -177,7 +204,7 @@ export const ExampleContent: FC<ExampleContentProps> = ({
 
   const showCodeTab = entryData && entryData?.length > 1;
   return (
-    <div className={s.box} ref={boxRef}>
+    <div className={`${s.box} ${fullscreenMode !== 'off' ? s['box-fullscreen'] : ''} ${!showCode ? s['box-code-collapsed'] : ''} ${hasPreview && !showPreview ? s['box-preview-collapsed'] : ''}`} ref={boxRef}>
       <div className={s.container} ref={containerRef}>
         <div className={s.content}>
           <div className={s['code-wrap']}>
@@ -232,39 +259,86 @@ export const ExampleContent: FC<ExampleContentProps> = ({
             </div>
           </div>
 
-          <ResizableContainer show={hasPreview && showPreview} vertical={isVertical}>
+          <ResizableContainer
+            show={hasPreview}
+            collapsed={hasPreview && !showPreview}
+            onCollapsedChange={(c) => {
+              setShowPreview(!c);
+              if (c && !showCode) setShowCode(true);
+            }}
+            codeCollapsed={hasPreview && !showCode}
+            onCodeCollapsedChange={(c) => {
+              setShowCode(!c);
+              if (c && !showPreview) setShowPreview(true);
+            }}
+            vertical={isVertical}
+          >
             <div className={s['preview-wrap']}>
               <div className={s['preview-wrap-content']}>
-                <RadioGroup
-                  onChange={(e) => setPreviewType(e.target.value)}
-                  value={previewType}
-                  type="button"
-                  style={{
-                    display: 'flex',
-                    width: '100%',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {initState ? (
-                    <>
-                      {previewImage && (
-                        <Radio value={PreviewType.Preview}>
-                          {t('go.preview')}
-                        </Radio>
-                      )}
-                      {hasWebPreview && (
-                        <Radio value={PreviewType.Web}>Web</Radio>
-                      )}
-                      {currentEntry && (
-                        <Radio value={PreviewType.QRCode}>
-                          {t('go.qrcode')}
-                        </Radio>
-                      )}
-                    </>
-                  ) : (
-                    <div style={{ width: '100%', height: '32px' }}></div>
-                  )}
-                </RadioGroup>
+                <div className={s['preview-header']}>
+                  {/* Invisible spacer to balance the fullscreen button on the right */}
+                  <div style={{ width: 24, flexShrink: 0 }} />
+                  <RadioGroup
+                    onChange={(e) => setPreviewType(e.target.value)}
+                    value={previewType}
+                    type="button"
+                    style={{
+                      display: 'flex',
+                      flex: 1,
+                      minWidth: 0,
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {initState ? (
+                      <>
+                        {previewImage && (
+                          <Radio value={PreviewType.Preview}>
+                            {t('go.preview')}
+                          </Radio>
+                        )}
+                        {hasWebPreview && (
+                          <Radio value={PreviewType.Web}>Web</Radio>
+                        )}
+                        {currentEntry && (
+                          <Radio value={PreviewType.QRCode}>
+                            {t('go.qrcode')}
+                          </Radio>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ width: '100%', height: '32px' }}></div>
+                    )}
+                  </RadioGroup>
+                  <Button
+                    theme="borderless"
+                    icon={
+                      fullscreenMode !== 'off' && !showCode ? (
+                        <IconExitFullscreen
+                          style={{ color: 'var(--semi-color-text-2)' }}
+                        />
+                      ) : (
+                        <IconFullscreen
+                          style={{ color: 'var(--semi-color-text-2)' }}
+                        />
+                      )
+                    }
+                    type="tertiary"
+                    size="small"
+                    onClick={() => {
+                      if (fullscreenMode !== 'off' && !showCode) {
+                        // Already fullscreen + preview only → exit fullscreen
+                        setFullscreenMode('off');
+                      } else if (fullscreenMode !== 'off' && showCode) {
+                        // Fullscreen with code visible → hide code
+                        setShowCode(false);
+                      } else {
+                        // Not fullscreen → enter fullscreen + hide code
+                        setFullscreenMode('all');
+                        setShowCode(false);
+                      }
+                    }}
+                  />
+                </div>
 
                 {previewType === PreviewType.QRCode && currentEntry && (
                   <div className={s.qrcode}>
@@ -395,26 +469,6 @@ export const ExampleContent: FC<ExampleContentProps> = ({
             </Space>
           </Space>
           <Space spacing={7}>
-            {hasPreview && (
-              <Space spacing={6}>
-                <Typography.Text size="small" type="tertiary">
-                  {t('go.preview')}
-                </Typography.Text>
-
-                <Switch
-                  style={{
-                    backgroundColor: showPreview
-                      ? 'var(--semi-color-info)'
-                      : 'var(--semi-color-fill-0)',
-                    cursor: 'pointer',
-                  }}
-                  checked={showPreview}
-                  onChange={setShowPreview}
-                  size="small"
-                />
-              </Space>
-            )}
-
             <Button
               theme="borderless"
               icon={
@@ -428,6 +482,67 @@ export const ExampleContent: FC<ExampleContentProps> = ({
                   '_blank',
                 );
               }}
+            />
+            {hasPreview && (
+              <Space spacing={6}>
+                <Typography.Text size="small" type="tertiary" className={s['toggle-label']}>
+                  Code
+                </Typography.Text>
+                <Switch
+                  style={{
+                    backgroundColor: showCode
+                      ? 'var(--semi-color-info)'
+                      : 'var(--semi-color-fill-0)',
+                    cursor: 'pointer',
+                  }}
+                  checked={showCode}
+                  onChange={(checked) => {
+                    setShowCode(checked);
+                    if (!checked && !showPreview) setShowPreview(true);
+                  }}
+                  size="small"
+                />
+              </Space>
+            )}
+            {hasPreview && (
+              <Space spacing={6}>
+                <Typography.Text size="small" type="tertiary" className={s['toggle-label']}>
+                  {t('go.preview')}
+                </Typography.Text>
+                <Switch
+                  style={{
+                    backgroundColor: showPreview
+                      ? 'var(--semi-color-info)'
+                      : 'var(--semi-color-fill-0)',
+                    cursor: 'pointer',
+                  }}
+                  checked={showPreview}
+                  onChange={(v) => {
+                    setShowPreview(v);
+                    if (!v && !showCode) setShowCode(true);
+                  }}
+                  size="small"
+                />
+              </Space>
+            )}
+            <Button
+              theme="borderless"
+              icon={
+                fullscreenMode !== 'off' ? (
+                  <IconExitFullscreen
+                    style={{ color: 'var(--semi-color-text-2)' }}
+                  />
+                ) : (
+                  <IconFullscreen
+                    style={{ color: 'var(--semi-color-text-2)' }}
+                  />
+                )
+              }
+              type="tertiary"
+              size="small"
+              onClick={() =>
+                setFullscreenMode((m) => (m !== 'off' ? 'off' : 'all'))
+              }
             />
             {rightFooter}
           </Space>

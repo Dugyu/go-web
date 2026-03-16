@@ -14,6 +14,33 @@ const exampleNames = fs.existsSync(examplesDir)
       .sort()
   : ['hello-world'];
 
+// Read example files at build time to produce the same raw markdown that
+// ExamplePreviewSSG renders during rspress SSG. This lets the example app
+// show the real SSG output as a visual reference.
+function readSSGMarkdown(exampleName: string, defaultFile = 'src/App.tsx'): string | null {
+  try {
+    const code = fs.readFileSync(
+      path.join(examplesDir, exampleName, defaultFile),
+      'utf-8',
+    );
+    const ext = defaultFile.split('.').pop() || 'txt';
+    const lang = ext === 'mjs' ? 'js' : ext;
+    return [
+      `**This is an example below: ${exampleName}**\n`,
+      '```' + lang + '\n' + code + '\n```',
+      '',
+    ].join('\n');
+  } catch {
+    return null;
+  }
+}
+
+const ssgPreviews: Record<string, string> = {};
+for (const name of exampleNames) {
+  const md = readSSGMarkdown(name);
+  if (md) ssgPreviews[name] = md;
+}
+
 export default defineConfig({
   plugins: [pluginReact(), pluginSass()],
 
@@ -28,6 +55,8 @@ export default defineConfig({
     define: {
       // Inject the example list as a build-time constant
       'import.meta.env.EXAMPLES': JSON.stringify(exampleNames),
+      // Inject SSG previews as a build-time constant
+      'import.meta.env.SSG_PREVIEWS': JSON.stringify(ssgPreviews),
     },
   },
 
